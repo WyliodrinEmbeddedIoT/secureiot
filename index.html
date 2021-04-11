@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Developing Secure Embedded Systems Using the Rust Programming Language</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style/style.css"></link>
+    <style>
+      
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Developing Secure Embedded Systems Using the Rust Programming Language
+
+.small[.center[![Developing Secure Embedded Systems Using the Rust Programming Language](images/rust_tock_embedded.svg)]]
+
+.left[
+Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
+]
+
+---
+# Welcome
+
+ - Alexandru Radovici, PhD
+ - Projects
+   - [Wyliodrin STUDIO](https://wyliodrin.studio) - open source IDE for IoT
+   - [Tock](https://www.tockos.org) - Secure Embedded OS written in Rust
+
+- [What about you](https://forms.gle/Hqpa5bJCd5PkWCxE6)
+  - Please fill out this form
+
+---
+
+# Layout
+
+An introduction to [Rust](https://www.rust-lang.org/) and [TockOS](https://www.tockos.org/).
+
+- Week 1 - An Introduction to the Rust Language and Tock
+  - [Day 1](day1_1) - Intro to Rust
+  - Day 2 - Rust Memory Safety & Tock Architecture
+  - Workspace Setup
+- Week 2 - Tock
+  - Day 1 - System Calls & Capsules
+  - Day 2 - Teams & Workshop
+  - Project Selection
+- Week 3 - Project
+- Week 4 - Tock Development
+  - Day 1 - Advanced Drivers and IPC
+  - Report Presentation 
+- Week 5 - Project
+- Week 6 - Connectivity
+  - Day 1 - Bluetoot LE (partial) Stack
+  - Report Presentation
+- Week 7 - Project
+- Week 8 - Grades
+  - Day 1 - Written Exam
+  - Day 2 - Project Presentation
+
+
+---
+class: split-50
+# Rules
+
+.column[
+
+- You must attend all the activites
+
+- All communication has to be in English
+  - including written communication using Teams
+
+- Ask as many questions as possible
+  - you may write questions if it is easier
+
+- You must form groups (2 persons)
+  - deadline Wednesday 11:59 PM
+
+- Register using the Intranet for Follow-Up and Deliver
+]
+
+.column[
+.center[.small[![Rules](images/rules.png)]]
+]
+
+---
+
+# Software
+
+- [Visual Studio Code](https://code.visualstudio.com/) - development software
+
+### Linux
+Use any distribution
+
+### Windows
+Virtual Machine (VirtualBox or VMWare)
+
+### macOS
+Install brew
+
+<!-- - [Virtual Machine](https://drive.google.com/drive/u/2/folders/1thj-DwDWb8MgghW5rzOR6kRyGjY6G3xI) with all the software preinstalled
+- [Guide](https://drive.google.com/file/d/1hpJ2yysqKzfFEASeAWWFqKNST5CQ7XY7/view?usp=sharing) for setting up the software -->
+
+---
+
+# Hardware
+
+- [BBC Micro:bit v2](https://microbit.org/new-microbit/)
+- One of the following:
+  - Raspberry Pi
+  - Android Phone
+
+.center[![Micro:bit v2 Sides](images/microbit_v2_sides.png)]
+
+---
+
+ # Grading
+
+ - 30% Written Exam
+ - 70% Project
+
+---
+class: split-50
+# Internet of Things
+.column[
+- Devices communicate
+- Use the network to be smart
+
+- Sometimes missused
+]
+
+.column[
+.center[.large_vertical[![IoT Stack](images/iot_stack.png)]]
+]
+
+---
+# Devices
+
+They will all be connected ...
+
+.center[.title[![IoT Devices](images/iot_devices.jpg)]]
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script src="script/playground.js">
+    </script>
+    <script>
+      var slideshow = remark.create({
+		navigation: {
+				scroll: false
+			}
+    });
+    window.cPlaygroundUrl = "https://cplayground.com/";
+    window.playgroundUrl = "https://play.rust-lang.org/";
+    </script>
+  </body>
+</html>
