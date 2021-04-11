@@ -1,5 +1,5 @@
 # Secure IoT
 
-![Rust Tock Embedded](images/rust_tock_embedded.svg | width=500px)
+<img src="images/rust_tock_embedded.svg" width="220">
 
 Developing Secure Embedded Systems Using the Rust Programming Language
