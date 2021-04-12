@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var elements = document.querySelectorAll('code.c');
 
         Array.prototype.forEach.call(elements, function(el) {
-            // el.onmouseover = function(e) {
+            el.onmouseover = function(e) {
                 if (el.contains(e.relatedTarget)) {
                     return;
                 }
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         el.removeChild(el.querySelectorAll('a.test-arrow')[0]);
                     };
                 }
-            // };
+            };
         });
     }
 
