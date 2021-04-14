@@ -1044,7 +1044,7 @@ trait Output {
     fn clear (&self);
 }
 
-fn digital_write (pin: P) {
+fn digital_write<P: Output> (pin: P) {
     /// use the Output trait
 }
 
@@ -1125,13 +1125,9 @@ All Tock traits use `&self` to be able to share a driver with several other driv
 
 Interior mutability:
 - Cell<T> (`core::cell::Cell`)
-- OptionalCell<T> (`kernel::common:cells::OptionalCell`)
-- TakeCell<T> (`kernel::common::cells::TakeCell`)
 
 .right[
 .card[.small_vertical[![Cell](../images/sep_cell.png)]]
-.card[.small_vertical[![OptionalCell](../images/sep_optionalcell.png)]]
-.card[.small_vertical[![TakeCell](../images/sep_takecell.png)]]
 ]
 
 ---
@@ -1286,6 +1282,41 @@ fn main() {
     p.set_firstname ("New");
     let name = p.get_name ();
     println! ("{}", name);
+}
+```
+
+---
+# Homework
+
+Modify and implement the following traits to simulate a web server. 
+
+Make a linked list to store the pages.
+
+Hint: look at `& dyn Trait`
+
+```rust
+trait WebPage {
+    fn get_url () -> &str;
+    fn get_page () -> &str;
+    fn print_page_urls ();
+}
+
+trait WebServer<P: WebPage> {
+    fn register_page (p: &P);
+    fn unregister_page (p: &P);
+
+    // returns the page that matches exactly the url
+    fn get (url: &str) -> &str;
+}
+
+fn main() {
+    let server = ...
+    server.register_page ()
+    server.register_page ()
+    server.register_page ()
+    
+    println! ("{}", server.get ("..."));
+}ead: &ListItem
 }
 ```
 
