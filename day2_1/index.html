@@ -37,7 +37,6 @@ You will have to install:
     - Windows: Make sure you select __Allow__ when you get a question from the Firewall
 
 &sup1;If you are running Linux or MacOS, this step is recommended, not necessary.<br>
-&sup2;You do need these for simulating Tock
 
 ---
 ## Virtual Box
@@ -65,15 +64,13 @@ Setup the Extensions:
 
 .center[.title[![Remote SHH Link](../images/vscode_ssh_link.png)]]
 
-&sup1; Due to an issue with the Remote SSH Extension, you will always have to write `tock@localhost:2000`, it will not be remebered.
+&sup1; Due to an issue with the Remote SSH Extension, you might always have to write `tock@localhost:2000`, it will not be remebered.
 
 
 ---
 
 class: split-50
 # BBC Micro:bit v2
-
-TODO
 
 .column[
 - __nRF52833__ MCU 
@@ -88,28 +85,7 @@ TODO
 ]
 
 .column[
-.card[.small[.center[![Data Types](../images/sep_stm.png)]]]
-.card[.small_vertical[.center[![Data Types](../images/sep_hardware.png)]]]
-]
-
----
-class: split-50
-
-##  Microcontroller Memory Layout
-
-TODO
-
-.column[
-Addresses from 0 to 4GB 
-- Flash - stores the programs (kewrnel and applications)
-- RAM - used while running
-- Hardware
-
-.card[.small_vertical[.center[![Memory Map](../images/sep_bus.png)]]]
-]
-
-.column[
-.card[.large_vertical[.center[![Memory Map](../images/sep_memory_map.png)]]]
+.large_vertical[.center[![Data Types](../images/microbit-v2.png)]]
 ]
 
 ---
@@ -128,9 +104,9 @@ Upload the Tock kernel to the board
 
 ## 1. Connect Micro:bit v2 (the board)
 
-Use the micro USB port&sup1;
+Use the micro USB port
 
-.title[.center[![Stack](../images/stm32f412gdiscovery.jpg)]]
+.title[.center[![Stack](../images/connect_microbit.jpg)]]
 
 ---
 ## 2. Connect the USB to the Virtual Machine
@@ -146,8 +122,6 @@ TODO
 &sup2; The name can be different
 ---
 ## 3. Check that the VM can access the USB
-
-TODO
 
 In the VS Code shell, run
 
@@ -237,7 +211,7 @@ class: split-50
 ]
 
 .column[
-.card[.large_vertical[.center[![Interrupts](../images/sep_interrupts.png)]]]
+.large_vertical[.center[![Interrupts](../images/cortex-m4-vectors.png)]]
 ]
 
 ---
@@ -769,7 +743,7 @@ Application size report for target cortex-m7:
     848     208    2396    3452     d7c build/cortex-m7/cortex-m7.elf
 ```
 
-It compiles the applications for ARM-Cortex M0, M3, M4 and M4.
+It compiles the applications for ARM-Cortex M0, M3, M4 and M7.
 
 All the versions are bundled into a TAB file in `build/c_hello.tab`.
 
@@ -1092,31 +1066,25 @@ Applications request an action from the OS
 
 ### 0: Yield
 
-Yield transitions the current process from the Running to the Yielded state, and
-the process will not execute again until another upcall re-schedules the
-process.
-
-If a process has enqueued upcalls waiting to execute when Yield is called, the
-process immediately re-enters the Running state and the first upcall runs.
+Yield transitions the current process from the Running to the Yielded state.
 
 ```rust
 // waits for the next upcall
+// The process will not execute again until another upcall re-schedules the
+// process.
 yield()
 
 // does not wait for the next upcall
+// If a process has no enqueued upcalls, the
+// process immediately re-enters the Running state.
 yield_no_wait()
 ```
 
-##### Arguments
-
-None.
-
 ##### Return
 
-yield
-  - None 
+_yield_: None 
 
-yield_no_Wait
+_yield_no_wait_:
   - 1 - upcall ran
   - 0 - no upcall ran
 
@@ -1127,7 +1095,6 @@ yield_no_Wait
 Subscribe assigns upcall functions to be executed in response to various
 events.
 - a upcall function has a *upcall ID* (`driver`,`subscribe_number`), 
-- null pointer disables the upcall
 
 ```rust
 subscribe(driver: u32, subscribe_number: u32, upcall: u32, userdata: u32) -> Result<Upcall, (Upcall, ErrorCode)>
@@ -1185,7 +1152,7 @@ Allow shares memory buffers between the kernel and application.
 
 ```rust
 allow_readwrite(driver: u32, allow_number: u32, pointer: usize, size: u32) -> Result<ReadWriteAppSlice, (ReadWriteAppSlice, ErrorCode)>
-  allow_readonly(driver: u32, allow_number: u32, pointer: usize, size: u32) -> Result<ReadWriteAppSlice, (ReadWriteAppSlice, ErrorCode)>
+allow_readonly(driver: u32, allow_number: u32, pointer: usize, size: u32) -> Result<ReadWriteAppSlice, (ReadWriteAppSlice, ErrorCode)>
 ```
 
 #### Arguments
@@ -1243,10 +1210,6 @@ tock_exit(completion_code: u32)
 tock_restart(completion_code: u32)
 ```
 
-##### Arguments
-
-None.
-
 ##### Return
 
 None 
@@ -1260,7 +1223,7 @@ Enable the system calls trace in `kernel/src/config.rs`.
   - What is the driver number of the driver used for printing?
 
 2. Upload the blink app and look at the system calls trace.
-  - What is led's driver number?
+  - What is the leds matrix's driver number?
 
 ---
 
@@ -1407,7 +1370,7 @@ impl kernel::Platform for Platform {
           capsules::sound_pressure::DRIVER_NUM => f(Some(self.sound_pressure)),
           kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
           // hello driver
-            hello::DRIVER_NUM => f(Some(self.hello)),
+          hello::DRIVER_NUM => f(Some(self.hello)),
           _ => f(None),
       }
   }
@@ -1501,7 +1464,7 @@ impl Driver for Hello {
 ```
 
 Add a function for it in the header and source file in userspace. 
-Write and upload an app that userspac the driver.
+Write and upload an app that userspace the driver.
 
 ---
 # Mutability
@@ -1520,7 +1483,7 @@ Interior mutability:
 ]
 
 ---
-## Workpoint 12 .top_image[![Work In Progress](../images/work_in_progress.png)]
+## Workpoint 11 .top_image[![Work In Progress](../images/work_in_progress.png)]
 
 Add `command_num` 2 that will increment a counter and return it to the app.
   Hint: use `CommandReturn::success_u32 (...)`
