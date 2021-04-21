@@ -1285,7 +1285,7 @@ impl Driver for Hello {
     /// subscribe and allow will use the default implementation
 
     /// command syscall
-    fn command(&self, which: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+    fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
         match command_num {
             // command_num 0 is used to verify if the driver exists
             0 => CommandReturn::success(),
@@ -1448,7 +1448,7 @@ impl Driver for Hello {
     /// subscribe and allow will use the default implementation
 
     /// command syscall
-    fn command(&self, which: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+    fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
       match command_num {
           // command_num 0 is used to verify if the driver exists
           0 => CommandReturn::success(),
@@ -1507,7 +1507,7 @@ int main(void) {
 Hint: store the current number in the `Hello` structure.
 
 ---
-# Homework .top_image[![Work In Progress](../images/work_in_progress.png)]
+# Lunch work .top_image[![Work In Progress](../images/work_in_progress.png)]
 
 Work in teams
 
