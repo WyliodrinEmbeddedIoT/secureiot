@@ -170,7 +170,7 @@ We use the subscribe mechanism:
 
 ```rust
 struct TheDriver {
-    upcall: OptionalCell<Upcall>
+    upcall: Cell<Upcall>
     // ...
 }
 
@@ -187,7 +187,7 @@ impl Driver for TheDriver {
 impl PeripheralClient for TheDriver {
     fn action_done (&self, /* ... */) {
         let data1 = ..., data2 = ..., data3 = ...
-        self.upcall.map (|upcall| upcall.schedule (data1, data2, data3));
+        self.upcall.get().schedule (data1, data2, data3);
     }
 }
 ```
