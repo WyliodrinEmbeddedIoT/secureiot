@@ -86,8 +86,8 @@ Add the Led HIL to the `LedMatrix` so that other drivers are abkle to control th
 # Grants
 
 - Drivers may not allocate memeory themselves
-- Drivers store data for every app
-- Data is deallocated when the app stops
+- Drivers store data for every process
+- Data is deallocated when the process stops
 
 .card[.large[.center[![Borrow Rules](../images/sep_process_memory.png)]]]
 
@@ -139,14 +139,14 @@ impl Driver for Hello {
         command_num: usize,
         _data1: usize,
         _data2: usize,
-        process_id: AppId,
+        process_id: ProcessId,
     ) -> ReturnCode {
         match command_num {
             0 => ReturnCode::SUCCESS,
             1 => {
-                self.grant.enter (process_id, |app, _| {
-                    // app is of type AppData
-                    // use app. ...
+                self.grant.enter (process_id, |app| {
+                    // process is of type AppData
+                    // use process. ...
                     ReturnCode::SUCCESS
                 }).unwrap_or_else (|err| err.into())
             }
@@ -156,15 +156,17 @@ impl Driver for Hello {
 }
 ```
 
+---
+
 # Workpoint 2 .top_image[![Work In Progress](../images/work_in_progress.png)]
 
-Modify the counter driver to use a different counter for each app. Load two apps that print the counter at different intervals.
+Modify the counter driver to use a different counter for each process. Load two apps that print the counter at different intervals.
 
 ```rust
 impl Driver for Hello {
     /// subscribe and allow will use the default implementation
     /// command syscall
-    fn command(&self, command_num: usize, _data1: usize, _data2: usize, _process_id: AppId) -> CommandReturn {
+    fn command(&self, command_num: usize, _data1: usize, _data2: usize, _process_id: ProcessId) -> CommandReturn {
         match command_num {
             // command_num 0 is used to verify if the driver exists
             0 => CommandReturn::success(),
@@ -203,13 +205,13 @@ struct Print {
 }
 
 impl Driver for Print {
-    fn allow_readonly(&self, app: ProcessId, allow_num: usize, slice: ReadOnlyAppSlice) -> Result<ReadOnlyAppSlice, (ReadOnlyAppSlice, ErrorCode)> {
+    fn allow_readonly(&self, process: ProcessId, allow_num: usize, slice: ReadOnlyAppSlice) -> Result<ReadOnlyAppSlice, (ReadOnlyAppSlice, ErrorCode)> {
         match allow_num {
             0 => {
                 let res = self
                 .apps
-                .enter(appid, |app| {
-                    mem::swap(&mut app.buffer, &mut slice);;
+                .enter(Processid, |app| {
+                    mem::swap(&mut process.buffer, &mut slice);;
                     Ok(())
                 }).map_err(ErrorCode::from);
                 match res {
