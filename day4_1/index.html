@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Day 1 - Advanced Drivers</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style/style.css"></link>
+    <style>
+      
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Advanced Drivers
+
+.title[.center[![SecureEmbeddedProgramming](../images/sep.png)]]
+
+.left[
+Based on: [Rust ISP 2019](https://github.com/newpavlov/rust-isp-2019) slides  
+Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
+]
+
+---
+# Review
+
+- Did you solve the homework?
+- What were the issues?
+
+---
+
+# Hardware Interface Layer
+
+Drivers comminicate with each other using HIL
+
+Traits defined in the kernel (`kernel/src/hil/mod.rs`)
+
+.right[
+.card[.small_vertical[![System Call](../images/sep_system_call.png)]]
+.card[.small_vertical[![ADC](../images/sep_adc.png)]]
+.card[.small_vertical[![Alarm](../images/sep_alarm.png)]]
+.card[.small_vertical[![NineDoF](../images/sep_ninedof.png)]]
+.card[.small_vertical[![Pin Configure](../images/sep_pin_configure.png)]]
+.card[.small_vertical[![Pin Interrupt](../images/sep_pin_interrupt.png)]]
+.card[.small_vertical[![Pin Input Output](../images/sep_pin_input_output.png)]]
+.card[.small_vertical[![PWM](../images/sep_pwm.png)]]
+.card[.small_vertical[![Sensors](../images/sep_sensors.png)]]
+.card[.small_vertical[![Timer](../images/sep_timer.png)]]
+]
+
+---
+## The LED HIL
+
+```rust
+pub trait Led {
+    /// Initialize the LED. Must be called before the LED is used.
+    fn init(&self);
+
+    /// Turn the LED on.
+    fn on(&self);
+
+    /// Turn the LED off.
+    fn off(&self);
+
+    /// Toggle the LED.
+    fn toggle(&self);
+
+    /// Return the on/off state of the LED. `true` if the LED is on, `false` if
+    /// it is off.
+    fn read(&self) -> bool;
+}
+```
+
+---
+## Workpoint 1 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Add the Led HIL to the `LedMatrix` so that other drivers are abkle to control the LEDs.
+
+1. Make a new struct in led_matrix.rs that receives:
+  - a reference to the `LedMatrix`
+  - an LED position
+2. Implement the `Led` trait for this struct
+
+---
+# Grants
+
+- Drivers may not allocate memeory themselves
+- Drivers store data for every app
+- Data is deallocated when the app stops
+
+.card[.large[.center[![Borrow Rules](../images/sep_process_memory.png)]]]
+
+---
+## Grant Memory
+
+.splash_vertical[.center[![Borrow Rules](../images/grant_memory.png)]]
+
+---
+
+## Grants Usage
+
+In `hello.rs`
+```rust
+#[derive(Default)]
+pub struct AppData {
+    // ...
+}
+
+pub struct Hello {
+    // ...
+    grant: Grant<AppData>
+}
+```
+
+In `main.rs`
+```rust
+#[no_mangle]
+pub unsafe fn main() {
+    // ...
+    let grant_cap = create_capability!(capabilities::MemoryAllocationCapability);
+    let grant_hello = board_kernel.create_grant(&grant_cap);
+
+    let hello = static_init!(
+        hello::Hello,
+        hello::Hello::new(grant_hello)
+    );
+    // ...
+}
+```
+---
+
+## Using the Grant
+
+```rust
+impl Driver for Hello {
+    fn command(
+        &self,
+        command_num: usize,
+        _data1: usize,
+        _data2: usize,
+        process_id: AppId,
+    ) -> ReturnCode {
+        match command_num {
+            0 => ReturnCode::SUCCESS,
+            1 => {
+                self.grant.enter (process_id, |app, _| {
+                    // app is of type AppData
+                    // use app. ...
+                    ReturnCode::SUCCESS
+                }).unwrap_or_else (|err| err.into())
+            }
+            _ => ReturnCode::ENOSUPPORT,
+        }
+    }
+}
+```
+
+# Workpoint 2 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Modify the counter driver to use a different counter for each app. Load two apps that print the counter at different intervals.
+
+```rust
+impl Driver for Hello {
+    /// subscribe and allow will use the default implementation
+    /// command syscall
+    fn command(&self, command_num: usize, _data1: usize, _data2: usize, _process_id: AppId) -> CommandReturn {
+        match command_num {
+            // command_num 0 is used to verify if the driver exists
+            0 => CommandReturn::success(),
+            1 => { debug! ("Print Hello"); CommandReturn::success() }
+            2 => {
+                // use a grant
+                self.nr.set (self.nr.get () + 1);
+                CommandReturn::success_u32 (value: self.nr.get());
+            }
+            // the command number is not defined
+            _ => ReturnCode::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+}
+```
+
+---
+
+# Sending Buffers
+
+Apps may share data with drivers using the `allow` system calls and `ReadOnlyAppSlice` or `ReadWriteAppSlice` and `Gants`.
+
+```rust
+struct AppData {
+    buffer: Option<ReadWriteAppSlice>
+}
+
+```rust
+struct AppData {
+    buffer: Option<ReadOnlyAppSlice>
+}
+
+struct Print {
+    grant: Grant<AppData>
+    // ...
+}
+
+impl Driver for Print {
+    fn allow_readonly(&self, app: ProcessId, allow_num: usize, slice: ReadOnlyAppSlice) -> Result<ReadOnlyAppSlice, (ReadOnlyAppSlice, ErrorCode)> {
+        match allow_num {
+            0 => {
+                let res = self
+                .apps
+                .enter(appid, |app| {
+                    mem::swap(&mut app.buffer, &mut slice);;
+                    Ok(())
+                }).map_err(ErrorCode::from);
+                match res {
+                    Err(e) => Err((slice, e)),
+                    Ok(_) => Ok(slice),
+                }
+            }
+            _ => Err((slice, ErrorCode::NOSUPPORT)),
+        }
+    }
+    // ...
+}
+```
+
+---
+### `enter` function
+
+Checks if the process is still active:
+  - runs the closure if yes
+  - returns an error if not
+
+Errors
+```rust
+pub fn enter<F, R>(&self, processid: ProcessId, fun: F) -> Result<R, Error>
+    where
+        F: FnOnce(&mut GrantMemory<T>) -> R {
+            // ...    
+        }
+
+pub enum Error {
+    NoSuchApp,
+    OutOfMemory,
+    AddressOutOfBounds,
+    /// The process is inactive (likely in a fault or exit state) and the
+    /// attempted operation is therefore invalid.
+    InactiveApp,
+    /// This likely indicates a bug in the kernel and that some state is
+    /// inconsistent in the kernel.
+    KernelError,
+    /// Indicates some process data, such as a Grant, is already borrowed.
+    AlreadyInUse,
+}
+```
+
+---
+## Reading Slices
+
+The `Read` trait is implemented for `ReadOnlyAppSlice`
+```rust
+pub trait Read {
+    /// Length of the memory region.
+    fn len(&self) -> usize;
+
+    /// Pointer to the first byte of the userspace memory region.
+    fn ptr(&self) -> *const u8;
+
+    /// Applies a function to the (read only) slice reference pointed
+    /// to by the AppSlice.
+    fn map_or<F, R>(&self, default: R, fun: F) -> R
+    where
+        F: FnOnce(&[u8]) -> R;
+}
+```
+---
+## Writing Slices
+
+The `ReadWrite` trait is implemented for `ReadWriteAppSlice`
+```rust
+pub trait ReadWrite: Read {
+    /// Applies a function to the mutable slice reference pointed to
+    /// by the AppSlice.
+    fn mut_map_or<F, R>(&mut self, default: R, fun: F) -> R
+    where
+        F: FnOnce(&mut [u8]) -> R;
+}
+```
+
+---
+### Example
+
+Take a look at the Touch driver in `touch.rs`.
+
+---
+class: split-50
+# System Call Pattern
+
+.column[
+1. Allow a buffer
+2. Subscribe
+3. Send a Command
+4. Yield
+5. Verify if your callback was called
+  - yes, continue
+  - no, yield again
+]
+
+.column[
+.right[.card[.large_vertical[![System Call Pattern](../images/sep_syscall_pattern.png)]]]
+]
+
+---
+# Homework .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+1. Write a driver that display digits or letters on the LED Matrix
+2. Write a driver that display (scrolling) text on the LED Matrix
+  - the process shares a read-only buffer with the driver
+  - the process writes to the buffer and sends a command to the driver
+  - the driver displays the text and notifies the process when it is done
+
+Driver Parameters:
+  - scrolling speed
+
+---
+# Project
+
+Please prepare the following for Wednesday:
+
+1. A full description of what your project does
+2. The project acrhitecture:
+    - what is un userspace (the apps)
+    - what is in kernel space (the drivers)
+3. How do the components interract with each other?
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script src="../script/playground.js">
+    </script>
+    <script>
+      var slideshow = remark.create({
+		navigation: {
+				scroll: false
+			}
+    });
+    window.cPlaygroundUrl = "https://cplayground.com/";
+    window.playgroundUrl = "https://play.rust-lang.org/";
+    </script>
+  </body>
+</html>
