@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Day 1 - Advanced Tock</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style/style.css"></link>
+    <style>
+      
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Advanced Tock
+
+.title[.center[![SecureEmbeddedProgramming](../images/sep.png)]]
+
+.left[
+Based on: [Rust ISP 2019](https://github.com/newpavlov/rust-isp-2019) slides  
+Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
+]
+
+---
+# Review
+
+- Did you solve the homework (3 and 4)?
+- What were the issues?
+
+---
+# Advanced Topics
+
+1. BLE Advertisment
+2. Virtual Drivers
+
+---
+# BLE Advertisment
+
+The BLE stack is incomplete
+ - RuBLE is a work in progress
+
+```rust
+pub trait BleAdvertisementDriver<'a> {
+    fn transmit_advertisement(&self, buf: &'static mut [u8], len: usize, channel: RadioChannel);
+    fn receive_advertisement(&self, channel: RadioChannel);
+    fn set_receive_client(&self, client: &'a dyn RxClient);
+    fn set_transmit_client(&self, client: &'a dyn TxClient);
+}
+```
+
+---
+## Workpoint 1 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Try the BLE example in `libtock-c`.
+
+Examples in `examples/ble_advertising` and `examples/ble_passive_scanning`.
+
+1. Send BLE advertisments and watch them show up on the phone
+2. List all the BLE advertisments
+
+---
+## Simplified BLE data exchange
+
+Use BLE advertisments to send data over BLE
+
+1. Read some useful data (ex. sensors)
+2. Encode the data into the device's BLE name (advertisment)
+3. Send the advertisments for a few seconds
+    - make sure you flag identical packets
+
+---
+## Workpoint 2 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Send the acceleration value every 5 seconds using BLE advertisments
+
+---
+# Virtual Drivers
+
+Each peripheral has one single client
+ 
+This makes sharing peripherals:
+  1. Betweeen drivers - impossible
+  2. Between applications - possible
+    - the Driver is the only one that can access that peripheral
+
+---
+## Sharing peripherals between drivers:
+
+Example: temperature sensors
+
+1. Exported to userspace using the `Temperature` driver
+2. Used by the scheduler to know when to schedule less frequently 
+
+---
+## Virtual Devices
+
+Multiplexers `Mux`
+
+.card[.center[.title[![Cell](../images/sep_virtual_device.png)]]]
+
+---
+## Workpoint 3 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Virtualize the temperature sensor
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script src="../script/playground.js">
+    </script>
+    <script>
+      var slideshow = remark.create({
+		navigation: {
+				scroll: false
+			}
+    });
+    window.cPlaygroundUrl = "https://cplayground.com/";
+    window.playgroundUrl = "https://play.rust-lang.org/";
+    </script>
+  </body>
+</html>
