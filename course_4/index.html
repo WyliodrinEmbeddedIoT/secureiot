@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tock Architecture</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../style/style.css"></link>
+    <style>
+      
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Tock Design
+
+.small[.center[![Tock Design](../images/rust_tock_embedded.svg)]]
+
+.left[
+Alexandru Radovici, ilustrations by [Mieuneli](http://miau.laura.ro)
+]
+
+---
+
+# Tock Stack
+
+.splash[.center[![Stack](../images/tock-stack.png)]]
+
+Image from https://github.com/tock/tock/tree/master/doc.
+
+---
+
+# Tock Architecture
+
+.splash[.center[![Stack](../images/architecture.png)]]
+
+Image from https://github.com/tock/tock/tree/master/doc.
+
+---
+
+# Tock Binary
+
+- The Tock *Executable* File
+- Created by *elf2tab*
+- Tock binaries
+  - Tock Binary Format - TBF
+  - Tock Application Bundle - TAB
+---
+
+## Tock Binary Format
+
+.splash[.center[![Stack](../images/tock_binary_format.png)]]
+
+---
+
+## TBF Headers
+
+.large[.center[![Stack](../images/tbf_headers.png)]]
+
+---
+# Processes
+
+One process is running at a time 
+
+- __Running__ - the process is schedulable
+- __Yielded__ - the process is waiting
+- __StoppedRunning__ - the process was stopped while in *Running*
+- __StoppedYielded__ - the process was stopped while in *Yielded*
+- __Faulted__ - the process had a fault
+- __Terminated__ - the process has exited
+- __Unstarted__ - the process has not been started
+
+.right[.card[.small[![Scheduler Card](../images/sep_scheduler.png)]]]
+
+
+---
+
+## Faults
+
+The kernal and the processes can fault
+
+.pre[
+````terminal
+panicked at 'Process c_hello had a fault', kernel/src/process_standard.rs:282:17
+        Kernel version release-1.6-1393-gc4920c9ab
+
+---| No debug queue found. You can set it with the DebugQueue component.
+
+---| Cortex-M Fault Status |---
+Data Access Violation:              true
+Undefined Instruction Usage Fault:  true
+Forced Hard Fault:                  true
+Faulting Memory Address:            0x00000000
+Fault Status Register (CFSR):       0x00010082
+Hard Fault Status Register (HFSR):  0x40000000
+
+---| App Status |---
+𝐀𝐩𝐩: c_hello   -   [Faulted]
+ Events Queued: 0   Syscall Count: 3   Dropped Upcall Count: 0
+ Restart Count: 0
+ Last Syscall: Some(Memop { operand: 11, arg0: 536889844 })
+
+
+ ╔═══════════╤══════════════════════════════════════════╗
+ ║  Address  │ Region Name    Used | Allocated (bytes)  ║
+ ╚0x20006000═╪══════════════════════════════════════════╝
+             │ ▼ Grant        1056 |   1056          
+  0x20005BE0 ┼───────────────────────────────────────────
+             │ Unused
+  0x200049F4 ┼───────────────────────────────────────────
+             │ ▲ Heap            0 |   4588               S
+  0x200049F4 ┼─────────────────────────────────────────── R
+             │ Data            500 |    500               A
+  0x20004800 ┼─────────────────────────────────────────── M
+             │ ▼ Stack        2048 |   2048          
+  0x20004000 ┼───────────────────────────────────────────
+             │ Unused
+  0x20004000 ┴───────────────────────────────────────────
+             .....
+  0x00040400 ┬─────────────────────────────────────────── F
+             │ App Flash       980                        L
+  0x0004002C ┼─────────────────────────────────────────── A
+             │ Protected        44                        S
+  0x00040000 ┴─────────────────────────────────────────── H
+
+  R0 : 0x0000088C    R6 : 0x0004002C
+  R1 : 0x000402A4    R7 : 0x20004000
+  R2 : 0x0000000A    R8 : 0x00000000
+  R3 : 0x00000000    R10: 0x00000000
+  R4 : 0x0004002C    R11: 0x00000000
+  R5 : 0x00000000    R12: 0x7307FFE7
+  R9 : 0x20004800 (Static Base Register)
+  SP : 0x200047D8 (Process Stack Pointer)
+  LR : 0x000400E3
+  PC : 0x0004009C
+ YPC : 0x00040086
+
+ APSR: N 0 Z 1 C 1 V 0 Q 0
+       GE 0 0 0 0
+ EPSR: ICI.IT 0x00
+       ThumbBit true 
+
+ Total number of grant regions defined: 13
+  Grant  0: --          Grant  5: --          Grant 10: --        
+  Grant  1: --          Grant  6: --          Grant 11: --        
+  Grant  2: --          Grant  7: --          Grant 12: --        
+  Grant  3: --          Grant  8: --        
+  Grant  4: --          Grant  9: --        
+
+ Cortex-M MPU
+  Region 0: [0x20004000:0x20006000], length: 8192 bytes; ReadWrite (0x3)
+    Sub-region 0: [0x20004000:0x20004400], Enabled
+    Sub-region 1: [0x20004400:0x20004800], Enabled
+    Sub-region 2: [0x20004800:0x20004C00], Enabled
+    Sub-region 3: [0x20004C00:0x20005000], Disabled
+    Sub-region 4: [0x20005000:0x20005400], Disabled
+    Sub-region 5: [0x20005400:0x20005800], Disabled
+    Sub-region 6: [0x20005800:0x20005C00], Disabled
+    Sub-region 7: [0x20005C00:0x20006000], Disabled
+  Region 1: [0x00040000:0x00040400], length: 1024 bytes; UnprivilegedReadOnly (0x2)
+    Sub-region 0: [0x00040000:0x00040080], Enabled
+    Sub-region 1: [0x00040080:0x00040100], Enabled
+    Sub-region 2: [0x00040100:0x00040180], Enabled
+    Sub-region 3: [0x00040180:0x00040200], Enabled
+    Sub-region 4: [0x00040200:0x00040280], Enabled
+    Sub-region 5: [0x00040280:0x00040300], Enabled
+    Sub-region 6: [0x00040300:0x00040380], Enabled
+    Sub-region 7: [0x00040380:0x00040400], Enabled
+  Region 2: Unused
+  Region 3: Unused
+  Region 4: Unused
+  Region 5: Unused
+  Region 6: Unused
+  Region 7: Unused
+
+To debug, run `make debug RAM_START=0x20004000 FLASH_INIT=0x40055`
+in the app's folder and open the .lst file.
+
+
+````]
+
+
+---
+
+class: split-50
+## System Call
+
+.column[
+API provided by the OS
+- ABI (Application Binary Interface)
+- uses the `svc` (or similar) instruction
+
+Applications request an action from the OS
+
+.card[.small_vertical[![System Call](../images/sep_system_call.png)]]
+]
+
+.column[
+.center[.splash_vertical[![Scheduler](../images/syscall.svg)]]
+]
+
+---
+## Tock System Calls
+
+0. Yield
+1. Subscribe
+2. Command
+3. ReadWriteAllow
+4. ReadOnlyAllow
+5. Memop
+6. Exit
+
+.right[
+.card[.small[![yield](../images/sep_yield.png)]]
+.card[.small[![subscribe](../images/sep_subscribe.png)]]
+.card[.small[![command](../images/sep_command.png)]]
+.card[.small[![allow](../images/sep_allow.png)]]
+.card[.small[![memop](../images/sep_memop.png)]]
+.card[.small[![returncode](../images/sep_returncode.png)]]
+]
+
+---
+
+### 0: Yield
+
+Yield transitions the current process from the Running to the Yielded state.
+
+```rust
+// waits for the next upcall
+// The process will not execute again until another upcall re-schedules the
+// process.
+yield()
+
+// does not wait for the next upcall
+// If a process has no enqueued upcalls, the
+// process immediately re-enters the Running state.
+yield_no_wait()
+```
+
+##### Return
+
+_yield_: None 
+
+_yield_no_wait_:
+  - 1 - upcall ran
+  - 0 - no upcall ran
+
+---
+
+### 1: Subscribe
+
+Subscribe assigns upcall functions to be executed in response to various
+events.
+- a upcall function has a *upcall ID* (`driver`,`subscribe_number`), 
+
+```rust
+subscribe(driver: u32, subscribe_number: u32, upcall: u32, userdata: u32) -> Result<Upcall, (Upcall, ErrorCode)>
+```
+
+##### Arguments
+
+ - `driver`: An integer specifying which driver to call.
+ - `subscribe_number`: An integer index for which function is being subscribed.
+ - `upcall`: A pointer to a upcall function to be executed when this event
+ occurs. `void callback(int arg1, int arg2, int arg3, void* data)`.
+ - `userdata`: A pointer to a value of any type that will be passed back
+
+##### Return
+
+- The previously registered upcall or TOCK_NULL_UPCALL
+- Errors
+ - `NODEVICE` if `driver` does not refer to a valid kernel driver.
+ - `NOSUPPORT` if the driver exists but doesn't support the `subscribe_number`.
+ - Other return codes based on the specific driver.
+
+---
+
+### 2: Command
+
+Command instructs the driver to perform a specific action.
+
+```rust
+command(driver: u32, command_number: u32, argument1: u32, argument2: u32) -> CommandReturn
+```
+
+#### Arguments
+
+ - `driver`: An integer specifying which driver to call.
+ - `command_number`: An integer specifying the requested command.
+ - `argument1`: A command-specific argument.
+ - `argument2`: A command-specific argument.
+
+- One Tock convention with the Command syscall is that command number 0 will
+always return a value of 0 or greater if the driver is supported.
+
+#### Return
+- 3 usize numbers
+- Errors
+ - `NODEVICE` if `driver` does not refer to a valid kernel driver.
+ - `NOSUPPORT` if the driver exists but doesn't support the `command_number`.
+ - Other return codes based on the specific driver.
+
+---
+
+### 3 and 4: AllowRead(Write/Only)
+
+Allow shares memory buffers between the kernel and application.
+- null pointer revokes sharing a region.
+
+```rust
+allow_readwrite(driver: u32, allow_number: u32, pointer: usize, size: u32) -> Result<ReadWriteAppSlice, (ReadWriteAppSlice, ErrorCode)>
+allow_readonly(driver: u32, allow_number: u32, pointer: usize, size: u32) -> Result<ReadWriteAppSlice, (ReadWriteAppSlice, ErrorCode)>
+```
+
+#### Arguments
+
+ - `driver`: An integer specifying which driver should be granted access.
+ - `allow_number`: A driver-specific integer specifying the purpose of this
+   buffer.
+ - `pointer`: A pointer to the start of the buffer in the process memory space.
+ - `size`: An integer number of bytes specifying the length of the buffer.
+
+#### Return
+- The previous allowed pointer or NULL
+- Errors
+ - `NODEVICE` if `driver` does not refer to a valid kernel driver.
+ - `NOSUPPORT` if the driver exists but doesn't support the `allow_number`.
+ - `INVAL` the buffer referred to by `pointer` and `size` lies completely or
+partially outside of the processes addressable RAM.
+ - Other return codes based on the specific driver.
+
+---
+
+### 5: Memop
+
+Memop expands the memory segment available to the process, allows the process to
+retrieve pointers to its allocated memory space, provides a mechanism for
+the process to tell the kernel where its stack and heap start, and other
+operations involving process memory.
+
+```rust
+memop(op_type: u32, argument: u32) -> [[ VARIES ]] as u32
+```
+
+#### Arguments
+
+ - `op_type`: An integer indicating whether this is a `brk` (0), a `sbrk` (1),
+   or another memop call.
+ - `argument`: The argument to `brk`, `sbrk`, or other call.
+
+Each memop operation is specific and details of each call can be found in
+the [memop syscall documentation](syscalls/memop.md).
+
+#### Return
+
+- Dependent on the particular memop call.
+
+---
+
+### 6: Exit
+
+The process signals the kernel that it has no more work to do and can be stopped or that it asks
+the kernel to restart it.
+
+```rust
+tock_exit(completion_code: u32)
+tock_restart(completion_code: u32)
+```
+
+##### Return
+
+None 
+
+---
+
+# Hardware Interface Layer
+
+Drivers comminicate with each other using HIL
+
+Traits defined in the kernel (`kernel/src/hil/mod.rs`)
+
+.right[
+.card[.small_vertical[![System Call](../images/sep_system_call.png)]]
+.card[.small_vertical[![ADC](../images/sep_adc.png)]]
+.card[.small_vertical[![Alarm](../images/sep_alarm.png)]]
+.card[.small_vertical[![NineDoF](../images/sep_ninedof.png)]]
+.card[.small_vertical[![Pin Configure](../images/sep_pin_configure.png)]]
+.card[.small_vertical[![Pin Interrupt](../images/sep_pin_interrupt.png)]]
+.card[.small_vertical[![Pin Input Output](../images/sep_pin_input_output.png)]]
+.card[.small_vertical[![PWM](../images/sep_pwm.png)]]
+.card[.small_vertical[![Sensors](../images/sep_sensors.png)]]
+.card[.small_vertical[![Timer](../images/sep_timer.png)]]
+]
+
+
+---
+# Workpoint 1 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Implement a loop in the `hello` driver.
+
+```rust
+/// The driver system calls implementation
+impl Driver for Hello {
+    /// subscribe and allow will use the default implementation
+    /// command syscall
+    fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+        match command_num {
+            // command_num 0 is used to verify if the driver exists
+            0 => CommandReturn::success(),
+            1 => { debug! ("Print Hello"); CommandReturn::success() }
+            2 => {
+                // modify number
+                loop {
+                    self.nr.set (self.nr.get () + 1);
+                }
+                CommandReturn::success_u32 (self.nr.get())
+            }
+            // the command number is not defined
+            _ => CommandReturn::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+}
+```
+
+What is the problem with this?
+
+---
+## Tock is asynchronous
+
+- Apps may be preempted
+- Drivers may not be interrupted
+  - no use of delay in drivers 
+
+.center[![Do not disturb](../images/do-not-disturb.jpg)]
+
+---
+# Asynchronous Development
+
+Like an event loop
+
+- schedule next action
+- wait for events
+- repeat
+
+.right[.card[.large[![Asynchronous](../images/sep_async.png)]]]
+
+---
+
+## How drivers work
+
+.large[.center[![Asynchronous Development](../images/asynchronous.svg)]]
+
+---
+
+## Asynchronous HIL
+
+### Actual HIL
+
+You request actions from the peripheral.
+
+```rust
+trait Peripheral {
+    // ...
+    fn set_client (client: &'static dyn PeripheralClient);
+}
+```
+
+### HIL's Client(s)
+
+The peripheral will call this function when the action is done.
+
+```rust
+trait PeripheralClient {
+    fn action_done (&self, /* ... */);
+    // ...
+}
+```
+
+---
+## Asynchronous HIl usage
+
+In a driver, when the user space requests a command:
+  - the driver make s a request to the HIL
+  - returns control to the kernel (so that processes can run)
+  - the driver is eventually notified via the HIL's client
+  - the driver notifies the app
+
+```rust
+impl Driver for TheDriver {
+  fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+        match command_num {
+            0 => CommandReturn::success(),
+            1 => self.peripheral.drequest_action () // this usually returns a CommandReturn
+            _ => CommandReturn::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+    // ...
+}
+
+impl PeripheralClient for TheDriver {
+    fn action_done (&self) {
+        // ... notify the process
+    }
+}
+```
+
+How do we notify the process?
+
+---
+## Optional Cell
+
+Similar to `Cell<Option<T>>`, but has some useful functions:
+
+.right[.card[.large_vertical[![OptionalCell](../images/sep_optionalcell.png)]]]
+
+---
+### Subscribe
+
+We use the subscribe mechanism:
+
+```rust
+struct TheDriver {
+    upcall: Cell<Upcall>
+    // ...
+}
+
+impl Driver for TheDriver {
+  fn subscribe(&self, subscribe_identifier: usize, upcall: Upcall, app_id: ProcessId) -> Result<Upcall, (Upcall, ErrorCode)> {
+        match command_num {
+            0 => Ok(self.upcall.replace(upcall)),
+            _ => Err((upcall, ErrorCode::NOSUPPORT)),
+        }
+    }
+    // ...
+}
+
+impl PeripheralClient for TheDriver {
+    fn action_done (&self, /* ... */) {
+        let data1 = ..., data2 = ..., data3 = ...
+        self.upcall.get().schedule (data1, data2, data3);
+    }
+}
+```
+
+---
+## Subscribe in user space app
+
+In the app, you have to subscribe first:
+
+```c
+static event_from_driver (int data1, int data2, int data3, void *user_data) {
+    // ...
+}
+
+int main ()
+{
+    void *user_data = ... // may be NULL
+    subscribe (THE_DRIVER_NUMBER, 0, event_from_driver, user_data);
+    command (THE_DRIVER_NUMBER, 1, 0, 0);
+    yield ();
+}
+```
+
+---
+# Workpoint 2 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+Make the `Hello` driver asynchronous, it returns the counter via a subscribe.
+
+```rust
+/// The driver system calls implementation
+impl Driver for Hello {
+    /// allow will use the default implementation
+    fn subscribe(&self, subscribe_identifier: usize, upcall: Upcall, app_id: ProcessId) -> Result<Upcall, (Upcall, ErrorCode)> {
+        match command_num {
+            0 => // set the callback
+            _ => ReturnCode::ENOSUPPORT,
+        }
+    }
+    /// command syscall
+    fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+        match command_num {
+            // command_num 0 is used to verify if the driver exists
+            0 => CommandReturn::success(),
+            1 => { debug! ("Print Hello"); CommandReturn::success() }
+            2 => {
+                // modify number
+                self.nr.set (self.nr.get () + 1);
+                // schedule the callback
+                CommandReturn::success()
+            }
+            // the command number is not defined
+            _ => CommandReturn::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+}
+```
+
+---
+class: split-50
+# System Call Pattern
+
+.column[
+1. Allow a buffer
+2. Subscribe
+3. Send a Command
+4. Yield
+5. Verify if your callback was called
+  - yes, continue
+  - no, yield again
+]
+
+.column[
+.right[.card[.large_vertical[![System Call Pattern](../images/sep_syscall_pattern.png)]]]
+]
+
+---
+class: split-70
+
+# Delay in drivers
+
+Write a driver that prints hello every second
+
+We have to use the `Alarm` HIL as a generic type for our driver.
+
+.column[
+```rust
+use kernel::hil::time::{Alarm, AlarmClient, Frequency};
+use kernel::debug;
+use kernel::{AppId, Driver, ReturnCode, Grant};
+
+pub struct Hello<A: 'static + Alarm<'static>> {
+    alarm: &'static A,
+}
+
+impl<A: 'static + Alarm<'static>> Hello<A> {
+    pub fn new(alarm: &'static A) -> Hello<A> {
+        Hello { alarm: alarm }
+    }
+}
+```
+
+The `Alarm` trait cannot be used as `&'static dyn Alarm` due to its implementation (it has an assoctiated type `Alarm::Frequency`)
+
+]
+
+.column[
+.right[.card[.small_vertical[![Alarm](../images/sep_alarm.png)]]]
+]
+
+---
+
+## Alarm Implementation
+
+Implement `Driver` and `AlarmClient`
+
+```rust
+impl<A: 'static + Alarm<'static>> Driver for Hello<A> {
+    ffn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+        match command_num {
+            0 => CommandReturn::success(),
+            1 => {
+                // set an alarm
+                self.alarm.set_alarm(
+                    self.alarm.now (),
+                    A::Ticks::ticks_from_seconds(1)
+                );
+                CommandReturn::success()
+            }
+            _ => CommandReturn::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+}
+
+impl<A: 'static + Alarm<'static>> AlarmClient for Hello<A> {
+    fn fired(&self) {
+        debug! ("hello");
+        // next alarm
+        self.alarm.set_alarm(
+            self.alarm.now (),
+            A::Ticks::ticks_from_seconds(1)
+        );
+    }
+}
+```
+
+---
+## Intialize the alarm using `VirtualAlarm` 
+
+In `main.rs` add the generic type to `Hello`
+
+```rust
+let hello_alarm = static_init!(
+    VirtualMuxAlarm<'static, nrf52833::rtc::Rtc>,
+    VirtualMuxAlarm::new(mux_alarm)
+);
+
+let hello = static_init!(
+    hello::Hello<VirtualMuxAlarm<'static, nrf52833::rtc::Rtc<'static>>>,
+    hello::Hello::new(hello_alarm)
+);
+```
+
+---
+# Workpoint 2 .top_image[![Work In Progress](../images/work_in_progress.png)]
+
+1. Modify the hello driver by modifying `command 2` that prints a message at an interval of seconds sent as a parameter.
+2. Add `command 3` that stops the print.
+
+```rust
+/// The driver system calls implementation
+impl Driver for Hello {
+    /// subscribe and allow will use the default implementation
+    /// command syscall
+    fn command(&self, command_num: usize, r2: usize, r3: usize, caller_id: ProcessId) -> CommandReturn {
+        match command_num {
+            // command_num 0 is used to verify if the driver exists
+            0 => CommandReturn::success(),
+            1 => { debug! ("Print Hello"); CommandReturn::success() }
+            2 => {
+              // start printing a message every r2 seconds
+            }
+            3 => {
+              // stop printing a message
+            }
+            // the command number is not defined
+            _ => CommandReturn::failure (ErrorCode::NOSUPPORT),
+        }
+    }
+}
+```
+
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script src="../script/playground.js">
+    </script>
+    <script>
+      var slideshow = remark.create({
+		navigation: {
+				scroll: false
+			}
+    });
+    window.cPlaygroundUrl = "https://cplayground.com/";
+    window.playgroundUrl = "https://play.rust-lang.org/";
+    </script>
+  </body>
+</html>
